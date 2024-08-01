@@ -90,8 +90,8 @@ const Folder = () => {
             <AntDesign name="plus" size={28} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.deleteFolder} onPress={() => handleDeleteFolder(folderId)}>
-            <Text style={{ fontSize: 17 }}>Eliminar carpeta</Text>
-            <AntDesign name="minus" size={28} color="black" />
+            <Text style={{ fontSize: 15 }}>Eliminar carpeta</Text>
+            <AntDesign name="minus" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.tittle}>{folderName}</Text>
         </View>
