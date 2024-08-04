@@ -7,14 +7,32 @@ import AddFolder from "./pages/Inventory/components/addFolder";
 import Folder from "./pages/Inventory/components/folders";
 import LoginScreen from "./pages/login/loginScreen";
 import CreateAccount from "./pages/register/register";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./database/firebase";
+import AddCards from "./pages/Inventory/components/addCarts";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [loged, setLoged] = useState("Login");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setLoged("Home")
+      } else {
+        setLoged("Login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <ContextProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
+        <Stack.Navigator initialRouteName={loged}>
           <Stack.Screen
             name="Home"
             component={PrincipalPage}
@@ -43,6 +61,11 @@ export default function App() {
           <Stack.Screen
             name="Register"
             component={CreateAccount}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="AddCards"
+            component={AddCards}
             options={{ headerShown: false }}
           />
         </Stack.Navigator>

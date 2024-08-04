@@ -11,12 +11,19 @@ import {
 } from "react-native";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import Entypo from "@expo/vector-icons/Entypo";
-import { getFirestore, setDoc, doc } from "firebase/firestore";
+import {
+  getFirestore,
+  setDoc,
+  doc,
+  query,
+  collection,
+  getDoc,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { app, auth } from "../../database/firebase";
 
 const db = getFirestore(app);
-
-
 
 const CreateAccount = () => {
   const [username, setUsername] = useState("");
@@ -39,24 +46,33 @@ const CreateAccount = () => {
     showPassword ? setShowPassword(false) : setShowPassword(true);
   };
 
-  const createUser = () => {
-    createUserWithEmailAndPassword(auth, user, password)
-      .then((UserCredential) => {
-        const user = UserCredential.user;
-
-        setDoc(doc(db, "users", user.uid), {
-          username: username,
-          email: user.email,
-        });
-      })
-      .then(() => {
-        Alert.alert("Account created!");
-        navigation.navigate("Login");
-      })
-      .catch((error) => {
-        console.log(error);
-        Alert.alert(error.message);
+  const createUser = async () => {
+    try {
+      // Primero, verifica si el nombre de usuario ya existe
+      const userQuery = query(collection(db, 'users'), where('username', '==', username));
+      const querySnapshot = await getDocs(userQuery);
+  
+      if (!querySnapshot.empty) {
+        throw new Error('Ya hay una cuenta con este nombre de usuario');
+      }
+  
+      // Crea el usuario con email y contraseña
+      const userCredential = await createUserWithEmailAndPassword(auth, user, password);
+      const newUser = userCredential.user;
+  
+      // Luego, crea el documento del usuario en Firestore
+      await setDoc(doc(db, 'users', newUser.uid), {
+        uid: newUser.uid,
+        username: username,
+        email: newUser.email,
       });
+  
+      Alert.alert('¡Cuenta creada!');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error(error);
+      Alert.alert(error.message);
+    }
   };
 
   const usernameUpdate = (e) => {
@@ -69,12 +85,17 @@ const CreateAccount = () => {
     setPassword(e);
   };
 
-
   const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={{uri: "https://mrwallpaper.com/images/thumbnail/one-piece-phone-straw-hat-pirates-silhouettes-w159zozl47swnokd.webp"}} resizeMode="cover" style={styles.fondo}>
+      <ImageBackground
+        source={{
+          uri: "https://mrwallpaper.com/images/thumbnail/one-piece-phone-straw-hat-pirates-silhouettes-w159zozl47swnokd.webp",
+        }}
+        resizeMode="cover"
+        style={styles.fondo}
+      >
         <View style={styles.inputsContainer} blurType="light" blurAmount={10}>
           <Text style={{ fontSize: 25, marginBottom: 10, color: "#3c151b" }}>
             Crear cuenta
@@ -103,7 +124,7 @@ const CreateAccount = () => {
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={createUser} style={styles.boton}>
-            <Text style={styles.normalText}>Ingresar</Text>
+            <Text style={styles.normalText}>Crear</Text>
           </TouchableOpacity>
           <View style={styles.createContainer}>
             <Text style={styles.normalText}>¿Tienes una cuenta?</Text>

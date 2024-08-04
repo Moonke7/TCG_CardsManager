@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,24 +6,37 @@ import {
   StyleSheet,
   ImageBackground,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
-import { getFirestore, collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import Card from "./card";
 import { GlobalContext } from "../../../GlobalContext";
 import { app } from "../../../database/firebase";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import CustomAlert from "./deleteAlert";
+import CustomAlert from "./deleteFolderAlert";
+import CardPreviewInventory from "./cardInventoryPreview";
+import { combinedData } from "../../../database/Cards/combinedData";
 
 const Folder = () => {
-  const { folderId, folderName } = useContext(GlobalContext);
+  const { folderId, folderName, userId } = useContext(GlobalContext);
 
   const [cardsData, setCardsData] = useState(null);
+  const [viewVisible, setViewVisible] = useState(false);
   const db = getFirestore(app);
-  const CardsCollection = collection(db, `/folders/${folderId}/cards`);
+  const CardsCollection = collection(
+    db,
+    `users/${userId}/folders/${folderId}/cards`
+  );
 
-  useEffect(() => {
+  const LoadFolders = () => {
     getDocs(CardsCollection)
       .then((snapshot) => {
         const cardsArray = snapshot.docs.map((doc) => ({
@@ -35,15 +48,24 @@ const Folder = () => {
       .catch((error) => {
         console.error("Error getting documents: ", error);
       });
-  }, []);
+  };
+  useFocusEffect(
+    useCallback(() => {
+      LoadFolders();
+    }, [])
+  );
   const navigation = useNavigation();
 
   const GoToInventory = () => {
     navigation.navigate("Inventory");
   };
 
+  const goToAddCards = () => {
+    navigation.navigate("AddCards");
+  };
   const [alertVisible, setAlertVisible] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   const handleDeleteFolder = (folderId) => {
     setSelectedFolder(folderId);
@@ -51,11 +73,12 @@ const Folder = () => {
   };
 
   const confirmDelete = async () => {
+    /* arreglar */
     try {
-      await deleteDoc(doc(db, "folders", selectedFolder)); 
+      await deleteDoc(doc(db, `users/${userId}/folders`, selectedFolder));
       setAlertVisible(false);
       console.log(`Folder with ID: ${selectedFolder} deleted`);
-      navigation.navigate("Inventory")
+      navigation.navigate("Inventory");
     } catch (error) {
       console.error("Error deleting folder: ", error);
     }
@@ -65,7 +88,18 @@ const Folder = () => {
     setAlertVisible(false);
     setSelectedFolder(null);
   };
-
+  const CancelView = () => {
+    setViewVisible(false);
+  };
+  const SelectCard = (id) =>{
+    const card = combinedData.find((card) => card.id === id);
+    if (card) {
+      setSelectedCard(card);
+      setViewVisible(true);
+    } else {
+      console.error("Card not found!");
+    }
+  }
   return (
     <ImageBackground
       source={{
@@ -77,7 +111,7 @@ const Folder = () => {
         <View style={styles.info__container}>
           <TouchableOpacity
             onPress={GoToInventory}
-            style={{ position: "absolute", top: 25, right: 10 }}
+            style={{ position: "absolute", top: 25, left: 10 }}
           >
             <Ionicons
               name="chevron-back-circle-outline"
@@ -85,12 +119,15 @@ const Folder = () => {
               color="black"
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.addCarts}>
+          <TouchableOpacity style={styles.addCarts} onPress={goToAddCards}>
             <Text style={{ fontSize: 17 }}>Agregar cartas</Text>
             <AntDesign name="plus" size={28} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteFolder} onPress={() => handleDeleteFolder(folderId)}>
-            <Text style={{ fontSize: 15 }}>Eliminar carpeta</Text>
+          <TouchableOpacity
+            style={styles.deleteFolder}
+            onPress={() => handleDeleteFolder(folderId)}
+          >
+            <Text style={{ fontSize: 15 }}>Eliminar almacen</Text>
             <AntDesign name="minus" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.tittle}>{folderName}</Text>
@@ -99,14 +136,34 @@ const Folder = () => {
           visible={alertVisible}
           onConfirm={confirmDelete}
           onCancel={cancelDelete}
-          message="Seguro que quieres borrar esta carpeta?"
+          message="Seguro que quieres eliminar este almacen?"
+        />
+        <CardPreviewInventory
+          visible={viewVisible}
+          onCancel={CancelView}
+          imgSrc={selectedCard ? selectedCard.imgURL : ""}
+          selectedCard={selectedCard ? selectedCard : ""}
         />
         {cardsData ? (
-          cardsData.map((card) => (
-            <View key={card.id} style={styles.cards__container}>
-              <Card card={card} />
-            </View>
-          ))
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            {cardsData.map((card) => (
+              <View key={card.id} style={styles.cards__container}>
+                <TouchableOpacity onPress={() => SelectCard(card.id)}>
+                  <Image
+                    source={{ uri: card.img }}
+                    style={{ width: 70, height: 90 }}
+                  />
+                </TouchableOpacity>
+                <View style={styles.contador}>
+                  <Text
+                    style={{ fontSize: 10, fontWeight: "bold", color: "white" }}
+                  >
+                    {card.cantidad}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
         ) : (
           <Image
             style={{ width: 300, height: 300 }}
@@ -122,9 +179,10 @@ const Folder = () => {
 
 const styles = StyleSheet.create({
   cards__container: {
-    width: "100%",
+    width: 70,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   image: {
     flex: 1,
@@ -164,6 +222,27 @@ const styles = StyleSheet.create({
     right: 10,
     flexDirection: "row",
     alignItems: "center",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 10,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    width: 400,
+    gap: 5,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  contador: {
+    position: "absolute",
+    top: -5,
+    right: -3,
+    width: 20,
+    height: 20,
+    backgroundColor: "#525252",
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 export default Folder;

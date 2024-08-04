@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-const CustomAlert = ({ visible, onConfirm, onCancel, message }) => {
+const DeleteAlert = ({ visible, onConfirm, onCancel, message }) => {
   return (
     <Modal
       transparent={true}
@@ -62,4 +62,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CustomAlert;
+export default DeleteAlert;

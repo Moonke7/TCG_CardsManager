@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
   getFirestore,
 } from "firebase/firestore";
 import { app, auth } from "../../database/firebase";
+import { GlobalContext } from "../../GlobalContext";
 
 const LoginScreen = () => {
   const db = getFirestore(app);
@@ -26,6 +27,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [eye, setEye] = useState("eye");
   const [showPassword, setShowPassword] = useState(true);
+  const { setUserId, setUsername } = useContext(GlobalContext);
 
   useEffect(() => {
     const setDefault = () => {
@@ -44,11 +46,9 @@ const LoginScreen = () => {
   const SignIn = async () => {
     try {
       let email = user;
-
+      const q = query(collection(db, "users"), where("username", "==", user));
+      const querySnapshot = await getDocs(q);
       if (!user.includes("@")) {
-        const q = query(collection(db, "users"), where("username", "==", user));
-        const querySnapshot = await getDocs(q);
-
         if (!querySnapshot.empty) {
           email = querySnapshot.docs[0].data().email;
         } else {
@@ -57,7 +57,9 @@ const LoginScreen = () => {
       }
 
       await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("Signed in!");
+      Alert.alert("Sesion iniciada!");
+      setUserId(querySnapshot.docs[0].data().uid);
+      setUsername(user);
       navigation.navigate("Home");
     } catch (error) {
       console.error("Error signing in:", error);
@@ -76,7 +78,13 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={{uri: "https://mrwallpaper.com/images/thumbnail/one-piece-phone-straw-hat-pirates-silhouettes-w159zozl47swnokd.webp"}} resizeMode="cover" style={styles.fondo}>
+      <ImageBackground
+        source={{
+          uri: "https://mrwallpaper.com/images/thumbnail/one-piece-phone-straw-hat-pirates-silhouettes-w159zozl47swnokd.webp",
+        }}
+        resizeMode="cover"
+        style={styles.fondo}
+      >
         <View style={styles.inputsContainer} blurType="light" blurAmount={10}>
           <Text style={{ fontSize: 25, marginBottom: 10, color: "#3c151b" }}>
             Iniciar sesion
@@ -103,9 +111,7 @@ const LoginScreen = () => {
           </TouchableOpacity>
           <View style={styles.createContainer}>
             <Text style={styles.normalText}>¿No tienes cuenta?</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Register")}
-            >
+            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
               <Text style={styles.create}>crear cuenta</Text>
             </TouchableOpacity>
           </View>

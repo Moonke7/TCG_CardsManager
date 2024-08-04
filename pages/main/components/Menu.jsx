@@ -33,7 +33,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#545454",
     borderBottomWidth: 1,
     color: "#545454",
-  }
+    ShadowColor: "#f6f6f6",
+    shadowOffset: { width: -2, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
 });
 
 export default Menu;

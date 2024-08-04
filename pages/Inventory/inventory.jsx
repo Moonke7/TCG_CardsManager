@@ -18,8 +18,8 @@ import { GlobalContext } from "../../GlobalContext";
 const Inventory = () => {
   const [Folders, setFolders] = useState(null);
   const db = getFirestore(app);
-  const CardsCollection = collection(db, "folders");
-  const { setFolderId, setFolderName } = useContext(GlobalContext);
+  const { setFolderId, setFolderName, userId } = useContext(GlobalContext);
+  const CardsCollection = collection(db, `users/${userId}/folders`);
 
   const LoadFolders = () => {
     getDocs(CardsCollection)
@@ -40,13 +40,15 @@ const Inventory = () => {
   const goToHome = () => {
     navigation.navigate("Home");
   };
+
   const goToCreateFolder = () => {
     navigation.navigate("CreateFolder");
   };
-  const goToFolder = (id, name) => {
+
+  const goToFolder = async (id, name) => {
+    await setFolderId(id);
+    await setFolderName(name);
     navigation.navigate("Folder");
-    setFolderId(id);
-    setFolderName(name);
   };
 
   useFocusEffect(
@@ -67,7 +69,7 @@ const Inventory = () => {
           <Text style={{ fontSize: 35, fontWeight: "bold" }}>Inventario</Text>
           <TouchableOpacity
             onPress={goToHome}
-            style={{ position: "absolute", top: 25, right: 10 }}
+            style={{ position: "absolute", top: 25, left: 10 }}
           >
             <Ionicons
               name="chevron-back-circle-outline"
@@ -86,7 +88,7 @@ const Inventory = () => {
             }}
             onPress={goToCreateFolder}
           >
-            <Text style={{ fontSize: 17 }}>Nueva carpeta</Text>
+            <Text style={{ fontSize: 17 }}>Nuevo almacen</Text>
             <AntDesign name="plus" size={28} color="black" />
           </TouchableOpacity>
         </View>
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 10,
     paddingBottom: 25,
-    opacity: 0.95,
+    opacity: 0.85,
     alignItems: "center",
     justifyContent: "start",
   },
@@ -140,6 +142,8 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     borderBottomColor: "#3d3d3d",
     borderBottomWidth: 1,
+    fontSize: 20,
+    fontWeight: "bold"
   },
   info__container: {
     height: 150,

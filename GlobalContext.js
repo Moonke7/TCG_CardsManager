@@ -5,6 +5,8 @@ export const GlobalContext = createContext();
 export const ContextProvider = ({ children }) => {
   const [folderId, setFolderId] = useState(null);
   const [folderName, setFolderName] = useState("");
+  const [userId, setUserId] = useState("");
+  const [username, setUsername] = useState("");
 
   return (
     <GlobalContext.Provider
@@ -13,6 +15,10 @@ export const ContextProvider = ({ children }) => {
         setFolderId,
         setFolderName,
         folderName,
+        userId,
+        setUserId,
+        username,
+        setUsername,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
   Alert,
   ImageBackground,
@@ -12,13 +12,14 @@ import { useNavigation } from "@react-navigation/native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { app } from "../../../database/firebase";
 import { getFirestore, setDoc, collection, doc } from "firebase/firestore";
+import { GlobalContext } from "../../../GlobalContext";
 
 const AddFolder = () => {
   const [name, setName] = useState("");
+  const { userId } = useContext(GlobalContext);
 
   const NameUpdate = (e) => {
     setName(e);
-    console.log(e);
   };
 
   const navigation = useNavigation();
@@ -28,11 +29,12 @@ const AddFolder = () => {
   };
 
   const db = getFirestore(app);
+
   const addFolderToUser = async () => {
-    const folderName = name
+    const folderName = name;
     if (folderName != "") {
       try {
-        const userFoldersCollection = collection(db, `folders`);
+        const userFoldersCollection = collection(db, `users/${userId}/folders`);
         const newFolderRef = doc(userFoldersCollection);
 
         await setDoc(newFolderRef, {
@@ -58,10 +60,10 @@ const AddFolder = () => {
           style={styles.input}
           onChangeText={NameUpdate}
           value={name}
-          placeholder="Nombre de la carpeta"
+          placeholder="Nombre del almacen"
         />
         <TouchableOpacity style={styles.text} onPress={addFolderToUser}>
-          <Text style={{ fontSize: 13, color: "#464646" }}>Crear carpeta</Text>
+          <Text style={{ fontSize: 13, color: "#464646" }}>Crear almacen</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.close} onPress={GoToInventory}>
           <AntDesign name="closecircleo" size={32} color="black" />
