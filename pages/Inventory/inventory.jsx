@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
@@ -69,13 +70,9 @@ const Inventory = () => {
           <Text style={{ fontSize: 35, fontWeight: "bold" }}>Inventario</Text>
           <TouchableOpacity
             onPress={goToHome}
-            style={{ position: "absolute", top: 25, left: 10 }}
+            style={{ position: "absolute", top: 35, left: 5 }}
           >
-            <Ionicons
-              name="chevron-back-circle-outline"
-              size={32}
-              color="black"
-            />
+            <Ionicons name="arrow-back-outline" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={{
@@ -92,24 +89,28 @@ const Inventory = () => {
             <AntDesign name="plus" size={28} color="black" />
           </TouchableOpacity>
         </View>
-        {Folders ? (
-          Folders.map((folder) => (
-            <View key={folder.id} style={styles.cards__container}>
-              <TouchableOpacity
-                onPress={() => goToFolder(folder.id, folder.name)}
-              >
-                <Text style={styles.folder}>{folder.name}</Text>
-              </TouchableOpacity>
-            </View>
-          ))
-        ) : (
-          <Image
-            style={{ width: 300, height: 300 }}
-            source={{
-              uri: "https://media.tenor.com/of43hCTlDrUAAAAj/one-piece-z-studios.gif",
-            }}
-          />
-        )}
+        <View style={{height: 500}}>
+          {Folders ? (
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              {Folders.map((folder) => (
+                <View key={folder.id} style={styles.cards__container}>
+                  <TouchableOpacity
+                    onPress={() => goToFolder(folder.id, folder.name)}
+                  >
+                    <Text style={styles.folder}>{folder.name}</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <Image
+              style={{ width: 300, height: 300 }}
+              source={{
+                uri: "https://media.tenor.com/of43hCTlDrUAAAAj/one-piece-z-studios.gif",
+              }}
+            />
+          )}
+        </View>
       </View>
     </ImageBackground>
   );
@@ -135,15 +136,16 @@ const styles = StyleSheet.create({
   },
   cards__container: {
     width: "100%",
-    alignItems: "center",
+    alignItems: "start",
     justifyContent: "center",
+    borderBottomColor: "black",
+    borderBottomWidth: 0.5,
+    paddingVertical: 5,
   },
   folder: {
-    paddingTop: 15,
-    borderBottomColor: "#3d3d3d",
-    borderBottomWidth: 1,
+    paddingVertical: 10,
     fontSize: 20,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   info__container: {
     height: 150,
@@ -152,6 +154,15 @@ const styles = StyleSheet.create({
     borderBottomColor: "#464646",
     borderBottomWidth: 2,
     width: "95%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingLeft: "2%",
+    flexWrap: "wrap",
+    flexDirection: "row",
+    width: "100%",
+    gap: 10,
+    alignSelf: "center",
   },
 });
 

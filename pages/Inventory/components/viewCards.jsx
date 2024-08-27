@@ -17,7 +17,7 @@ import { combinedData } from "../../../database/Cards/combinedData";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useFocusEffect } from "@react-navigation/native";
 
-const ViewCards = ({ visible, onCancel }) => {
+const ViewCards = ({ visible, onCancel, update }) => {
   const { folderId, userId } = useContext(GlobalContext);
   const [selectedCard, setSelectedCard] = useState(null);
   const [ShowCard, setShowCard] = useState(false);
@@ -25,7 +25,7 @@ const ViewCards = ({ visible, onCancel }) => {
   const [cardsData, setCardsData] = useState(null);
   const db = getFirestore(app);
 
-  const loadCards = useCallback(() => {
+  useEffect(() => {
     if (userId && folderId) {
       const cardsCollection = collection(
         db, 
@@ -43,13 +43,8 @@ const ViewCards = ({ visible, onCancel }) => {
           console.error("Error getting documents: ", error);
         });
     }
-  });
+  }, [update]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadCards();
-    }, [])
-  );
 
   const HandleShow = (id) => {
     if (ShowCard) {
@@ -93,9 +88,9 @@ const ViewCards = ({ visible, onCancel }) => {
               <AntDesign name="close" size={24} color="black" />
             </TouchableOpacity>
             <View style={styles.preview__text}>
-              <Text>ID: {selectedCard ? selectedCard.id : ""}</Text>
+              <Text>ID: {selectedCard ? selectedCard.RealId : ""}</Text>
               <Text>Nombre: {selectedCard ? selectedCard.name : ""}</Text>
-              <Text>Color: {selectedCard ? selectedCard.color : ""}</Text>
+              <Text>Color: {selectedCard ? selectedCard.color : ""}</Text> 
               <Text>
                 Categoria: {selectedCard ? selectedCard.category : ""}
               </Text>
@@ -114,7 +109,7 @@ const ViewCards = ({ visible, onCancel }) => {
                     </View>
                   </TouchableHighlight>
                   <View style={styles.info__container}>
-                    <Text>ID: {card.id}</Text>
+                    <Text>ID: {card.RealId}</Text>
                     <Text>Nombre: {card.name}</Text>
                     <Text>Cantidad: {card.cantidad}</Text>
                   </View>

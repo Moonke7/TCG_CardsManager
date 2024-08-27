@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon_cards.png",
+        "foregroundImage": "./assets/IconTwo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.moonke7.CardsInventory"

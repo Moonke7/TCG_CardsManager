@@ -72,7 +72,7 @@ const CardPreview = ({
               </TouchableOpacity>
             </View>
             <View style={arrow == "left" ? styles.details__text__container__show : styles.details__text__container__hide}>
-              <Text style={styles.details__text}>ID: {selectedCard.id}</Text>
+              <Text style={styles.details__text}>ID: {selectedCard.RealId}</Text>
               <Text style={styles.details__text}>
                 Nombre: {selectedCard.name}
               </Text>

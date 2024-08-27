@@ -22,7 +22,7 @@ const Header = () => {
   };
   return (
     <View style={styles.container}>
-      <Text style={{fontSize: 15, color: "#202646"}}>{username}</Text>
+      <Text style={{ fontSize: 15, color: "#202646" }}>{username}</Text>
       <TouchableOpacity onPress={handleSignOut}>
         <AntDesign name="logout" size={24} color="#202646" />
       </TouchableOpacity>
@@ -31,20 +31,22 @@ const Header = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: "row",
-        alignItems: "center",
-        width: "99%",
-        justifyContent: "space-between",
-        position: "absolute",
-        top: 30,
-        alignSelf: "center",
-        borderBottomColor: "#374378",
-        borderBottomWidth: 1,
-        paddingBottom: 3,
-        paddingHorizontal: 5,
-        zIndex: 100
-    }
-})
+  container: {
+    top: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    width: "99%",
+    justifyContent: "space-between",
+    position: "absolute",
+    paddingTop: 30,
+    alignSelf: "center",
+    borderBottomColor: "#363636",
+    borderBottomWidth: 1,
+    paddingBottom: 3,
+    paddingHorizontal: 5,
+    zIndex: 100,
+    backgroundColor: "#dfdfdf",
+  },
+});
 
 export default Header;

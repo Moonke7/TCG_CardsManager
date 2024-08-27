@@ -36,6 +36,9 @@ import {
 } from "firebase/firestore";
 import ViewCards from "./viewCards";
 import DeleteAlert from "./deleteFolderAlert";
+import { Snackbar } from "react-native-paper";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
+import HowToUse from "./HowToUse";
 
 const AddCards = () => {
   const [search, setSearch] = useState("");
@@ -46,6 +49,29 @@ const AddCards = () => {
   const [cantidad, setCantidad] = useState(1);
   const [viewVisible, setViewVisible] = useState(false);
   const { folderId, userId, folderName } = useContext(GlobalContext);
+  const [visible, setVisible] = useState(false);
+  const [howToUse, setHowToUse] = useState(false);
+  const [Data, setData] = useState(combinedData);
+  const [colors, setColors] = useState({
+    red: false,
+    blue: false,
+    green: false,
+    yellow: false,
+    black: false,
+    purple: false,
+    multicolor: false,
+  });
+  const [updateCounter, setUpdateCounter] = useState(0);
+
+  const [saved, setSaved] = useState(false);
+  const onToggleSnackBar = () => setVisible(!visible);
+  const onDismissSnackBar = () => setVisible(false);
+
+  const onToggleSaved = () => setSaved(!saved);
+  const onDismissSaved = () => setSaved(false);
+  const [saving, setSaving] = useState(false);
+  const onToggleSaving = () => setSaving(!saving);
+  const onDismissSaving = () => setSaving(false);
 
   const db = getFirestore(app);
 
@@ -59,22 +85,58 @@ const AddCards = () => {
   };
 
   const filter = () => {
-    if (search == "") {
-      setResults(Multicolor);
-      return;
+    let filteredResults = Data;
+
+    if (search !== "") {
+      filteredResults = filteredResults.filter(
+        (card) =>
+          card.name.toLowerCase().includes(search.toLowerCase()) ||
+          card.id.toString().includes(search)
+      );
+    } else {
+      filteredResults = Multicolor;
     }
-    const filteredResults = combinedData.filter(
-      (card) =>
-        card.name.toLowerCase().includes(search.toLowerCase()) ||
-        card.id.toString().includes(search)
-    );
-    if (filteredResults.length == 0) {
-      Alert.alert("No hay resultados para esta busqueda");
+
+    const activeColors = Object.keys(colors).filter((color) => colors[color]);
+    if (activeColors.length > 0) {
+      filteredResults = filteredResults.filter((card) =>
+        activeColors.some((color) => card.color.toLowerCase().includes(color))
+      );
+    }
+
+    if (filteredResults.length === 0) {
+      Alert.alert("No hay resultados para esta búsqueda");
       setResults(Multicolor);
-      setSearch("");
     } else {
       setResults(filteredResults);
     }
+  };
+
+  const ColorFilter = (color) => {
+    setColors((prevColors) => {
+      const newColors = { ...prevColors, [color]: !prevColors[color] };
+      let filteredResults = Data;
+
+      if (search !== "") {
+        filteredResults = filteredResults.filter(
+          (card) =>
+            card.name.toLowerCase().includes(search.toLowerCase()) ||
+            card.id.toString().includes(search)
+        );
+      }
+
+      const activeColors = Object.keys(newColors).filter(
+        (clr) => newColors[clr]
+      );
+      if (activeColors.length > 0) {
+        filteredResults = filteredResults.filter((card) =>
+          activeColors.some((clr) => card.color.toLowerCase().includes(clr))
+        );
+      }
+
+      setResults(filteredResults.length > 0 ? filteredResults : Multicolor);
+      return newColors;
+    });
   };
 
   const HandleAdd = (id) => {
@@ -118,6 +180,7 @@ const AddCards = () => {
             cantidad: CardsNumber,
             name: CardToAdd.name,
             id: CardToAdd.id,
+            RealId: CardToAdd.RealId,
             power: CardToAdd.power,
             category: CardToAdd.category,
             type: CardToAdd.type,
@@ -126,12 +189,13 @@ const AddCards = () => {
             effect: CardToAdd.effect,
             img: CardToAdd.imgURL,
           });
-
+          onToggleSnackBar();
           console.log("Card added successfully!");
         }
 
         setAlertVisible(false);
-        setCantidad(0);
+        setUpdateCounter((prevCounter) => prevCounter + 1);
+        setCantidad(1);
         setSelectedCard(null);
       } catch (error) {
         console.log(error);
@@ -142,9 +206,9 @@ const AddCards = () => {
 
   const cancelDelete = () => {
     setAlertVisible(false);
-    setAddAlert(false)
+    setAddAlert(false);
     setSelectedCard(null);
-    setCantidad(0);
+    setCantidad(1);
   };
 
   const AddOne = () => {
@@ -163,25 +227,41 @@ const AddCards = () => {
     setViewVisible(true);
   };
 
-  const HandleAddAlert = () =>{
+  const HandleAddAlert = () => {
     setAddAlert(true);
   };
   const cancelAdd = () => {
     setAddAlert(false);
   };
+
+  const CancelHoToUse = () => {
+    setHowToUse(false);
+  };
+  const HandleHowToUse = () => {
+    setHowToUse(true);
+  };
   const AddCardsToUser = async () => {
     try {
-      const recentAddedCollection = collection(db, `users/${userId}/folders/${folderId}/recentAdded`);
-      const cardsCollection = collection(db, `users/${userId}/folders/${folderId}/cards`);
-      
+      const recentAddedCollection = collection(
+        db,
+        `users/${userId}/folders/${folderId}/recentAdded`
+      );
+      const cardsCollection = collection(
+        db,
+        `users/${userId}/folders/${folderId}/cards`
+      );
+
       const querySnapshot = await getDocs(recentAddedCollection);
-  
+      onToggleSaving();
       for (const cardDoc of querySnapshot.docs) {
         const cardData = cardDoc.data();
-  
-        const cardQuery = query(cardsCollection, where("id", "==", cardData.id));
+
+        const cardQuery = query(
+          cardsCollection,
+          where("id", "==", cardData.id)
+        );
         const cardQuerySnapshot = await getDocs(cardQuery);
-  
+
         if (!cardQuerySnapshot.empty) {
           const existingCardDoc = cardQuerySnapshot.docs[0];
           const existingCardData = existingCardDoc.data();
@@ -195,8 +275,12 @@ const AddCards = () => {
         }
         await deleteDoc(cardDoc.ref);
       }
-      console.log("All cards transferred and recentAdded emptied successfully!");
+      console.log(
+        "All cards transferred and recentAdded emptied successfully!"
+      );
+      onToggleSaved();
       setAddAlert(false);
+      navigation.navigate("Folder");
     } catch (error) {
       console.error("Error transferring cards: ", error);
     }
@@ -209,18 +293,16 @@ const AddCards = () => {
       style={styles.image}
     >
       <View style={styles.container}>
-        <Header />
         <View style={styles.top__info}>
           <TouchableOpacity
-            style={{ top: 40, position: "absolute" }}
+            style={{ top: 20, position: "absolute", left: 15 }}
             onPress={goBack}
           >
-            <Ionicons
-              name="chevron-back-circle-outline"
-              size={32}
-              color="black"
-            />
+            <Ionicons name="arrow-back-outline" size={24} color="black" />
           </TouchableOpacity>
+          {/* <TouchableOpacity onPress={HandleHowToUse} style={{position: "absolute", right: 15, top: 20}}>
+            <Feather name="info" size={24} color="black" />
+          </TouchableOpacity> */}
           <View style={styles.buttons__container}>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
@@ -238,20 +320,89 @@ const AddCards = () => {
               <Fontisto name="preview" size={16} color="#292929" />
             </TouchableOpacity>
           </View>
-
-          <TextInput
-            style={styles.input}
-            onChangeText={updateSearch}
-            value={search}
-            placeholder="Buscar por nombre / id "
-          />
-          <Feather
-            name="search"
-            size={24}
-            color="black"
-            style={styles.lupa}
-            onPress={filter}
-          />
+          <View style={styles.filter__container}>
+            <Text
+              style={{
+                fontWeight: "bold",
+                margin: 3,
+                borderBottomColor: "black",
+                borderBottomWidth: 1,
+              }}
+            >
+              Filtros por color
+            </Text>
+            <View style={{ flexDirection: "row", marginLeft: -30 }}>
+              <BouncyCheckbox
+                size={18}
+                style={{ padding: 0, margin: 0 }}
+                fillColor={"red"}
+                unFillColor={"transparent"}
+                isChecked={colors.red}
+                onPress={() => ColorFilter("red")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"black"}
+                unFillColor={"transparent"}
+                isChecked={colors.black}
+                onPress={() => ColorFilter("black")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"blue"}
+                unFillColor={"transparent"}
+                isChecked={colors.blue}
+                onPress={() => ColorFilter("blue")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"green"}
+                unFillColor={"transparent"}
+                isChecked={colors.green}
+                onPress={() => ColorFilter("green")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"#faff0d"}
+                unFillColor={"transparent"}
+                isChecked={colors.yellow}
+                onPress={() => ColorFilter("yellow")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"purple"}
+                unFillColor={"transparent"}
+                isChecked={colors.purple}
+                onPress={() => ColorFilter("purple")}
+              />
+              <BouncyCheckbox
+                size={18}
+                style={{ gap: 0 }}
+                fillColor={"#5d5d5d"}
+                unFillColor={"transparent"}
+                isChecked={colors.multicolor}
+                onPress={() => ColorFilter("multicolor")}
+              />
+            </View>
+            <TextInput
+              style={styles.input}
+              onChangeText={updateSearch}
+              value={search}
+              placeholder="Buscar por nombre / id "
+            />
+            <Feather
+              name="search"
+              size={24}
+              color="black"
+              style={styles.lupa}
+              onPress={filter}
+            />
+          </View>
         </View>
         {results.length > 0 ? (
           <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -282,7 +433,9 @@ const AddCards = () => {
         visible={AddAlert}
         onConfirm={AddCardsToUser}
         onCancel={cancelAdd}
-        message={"Añadiras las cartas guardadas previamente al almacen: " + folderName}
+        message={
+          "Añadiras las cartas guardadas previamente al almacen: " + folderName
+        }
       />
       <CardPreview
         visible={alertVisible}
@@ -301,7 +454,48 @@ const AddCards = () => {
         añadirCantidad={AddOne}
         quitarCantidad={MinusOnce}
       />
-      <ViewCards visible={viewVisible} onCancel={CancelView} />
+      <ViewCards
+        visible={viewVisible}
+        onCancel={CancelView}
+        update={updateCounter}
+      />
+      <HowToUse visible={howToUse} onCancel={CancelHoToUse} />
+      <Snackbar
+        visible={visible}
+        onDismiss={onDismissSnackBar}
+        action={{
+          label: "close",
+          onPress: () => {
+            onDismissSnackBar();
+          },
+        }}
+      >
+        Carta añadida. Presiona Ver cartas para ver las cartas añadidas
+      </Snackbar>
+      <Snackbar
+        visible={saved}
+        onDismiss={onDismissSaved}
+        action={{
+          label: "close",
+          onPress: () => {
+            onDismissSaved();
+          },
+        }}
+      >
+        Cartas guardadas en tu almacen!
+      </Snackbar>
+      <Snackbar
+        visible={saving}
+        onDismiss={onDismissSaving}
+        action={{
+          label: "close",
+          onPress: () => {
+            onDismissSaving();
+          },
+        }}
+      >
+        Guardando cartas...
+      </Snackbar>
     </ImageBackground>
   );
 };
@@ -311,7 +505,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 30,
     backgroundColor: "#ededed",
-    opacity: 0.85,
+    opacity: 0.9,
   },
   input: {
     borderColor: "#292929",
@@ -319,7 +513,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 2,
     paddingHorizontal: 10,
-    width: "50%",
+    width: "100%",
     marginVertical: 8,
     fontSize: 14,
     backgroundColor: "#e7e7e7",
@@ -363,7 +557,11 @@ const styles = StyleSheet.create({
   lupa: {
     position: "absolute",
     right: 10,
-    bottom: 17,
+    bottom: 14,
+  },
+  filter__container: {
+    width: "50%",
+    backgroundColor: "ededed",
   },
 });
 

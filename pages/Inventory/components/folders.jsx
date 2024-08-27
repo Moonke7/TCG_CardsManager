@@ -15,7 +15,6 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import Card from "./card";
 import { GlobalContext } from "../../../GlobalContext";
 import { app } from "../../../database/firebase";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -91,7 +90,7 @@ const Folder = () => {
   const CancelView = () => {
     setViewVisible(false);
   };
-  const SelectCard = (id) =>{
+  const SelectCard = (id) => {
     const card = combinedData.find((card) => card.id === id);
     if (card) {
       setSelectedCard(card);
@@ -99,7 +98,7 @@ const Folder = () => {
     } else {
       console.error("Card not found!");
     }
-  }
+  };
   return (
     <ImageBackground
       source={{
@@ -111,13 +110,9 @@ const Folder = () => {
         <View style={styles.info__container}>
           <TouchableOpacity
             onPress={GoToInventory}
-            style={{ position: "absolute", top: 25, left: 10 }}
+            style={{ position: "absolute", top: 35, left: 10 }}
           >
-            <Ionicons
-              name="chevron-back-circle-outline"
-              size={32}
-              color="black"
-            />
+            <Ionicons name="arrow-back-outline" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.addCarts} onPress={goToAddCards}>
             <Text style={{ fontSize: 17 }}>Agregar cartas</Text>

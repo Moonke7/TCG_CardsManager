@@ -58,6 +58,7 @@ const LoginScreen = () => {
 
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Sesion iniciada!");
+      
       setUserId(querySnapshot.docs[0].data().uid);
       setUsername(user);
       navigation.navigate("Home");
