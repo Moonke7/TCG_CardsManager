@@ -92,12 +92,14 @@ const Menu = ({ user }) => {
       <TouchableOpacity onPress={user ? goToSavedDecks : ""}>
         <Text style={styles.text}>Mazos guardados</Text>
       </TouchableOpacity>
+
       <CreateDeckAlert
         visible={visible}
         onConfirm={confirmCreate}
         onCancel={cancelCreate}
         message="Ingresa el nombre de el mazo"
       />
+
       <Snackbar
         visible={snackbar}
         onDismiss={onDismissSnackBar}

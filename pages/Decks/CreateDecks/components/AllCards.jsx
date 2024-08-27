@@ -20,7 +20,7 @@ import { Multicolor } from "../../../../database/Cards/OpCards - multicolor";
 import { app } from "../../../../database/firebase";
 import { GlobalContext } from "../../../../GlobalContext";
 
-const AllCards = ({ addCard }) => {
+const AllCards = ({ addCard, loading }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState(Multicolor);
   const [Data, setData] = useState(combinedData);
@@ -170,6 +170,7 @@ const AllCards = ({ addCard }) => {
             onChangeText={updateSearch}
             value={search}
             placeholder="Buscar por nombre / id "
+            onSubmitEditing={filter}
           />
           <Feather
             name="search"
@@ -181,7 +182,7 @@ const AllCards = ({ addCard }) => {
           <View style={styles.note}>
             <Text style={{ fontWeight: "bold", color: "red" }}>Nota: </Text>
             <Text style={{ fontWeight: "600" }}>
-              los diseños alternativos se pueden cambiar manteniendo las cartas
+              los diseños alternativos se pueden cambiar presionando las cartas
               agregadas
             </Text>
           </View>
@@ -195,7 +196,7 @@ const AllCards = ({ addCard }) => {
           columnWrapperStyle={styles.columnWrapper} // Style for the row wrapper
           contentContainerStyle={styles.scrollContent}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => addCard(item.id)}>
+            <TouchableOpacity onPress={() => addCard(item.id)} disabled={loading}>
               <ImageBackground
                 source={{ uri: item.imgURL }}
                 style={styles.card}
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingLeft: "2%",
-    paddingBottom: 15,
+    paddingBottom: 65,
   },
   columnWrapper: {
     justifyContent: "flex-start",

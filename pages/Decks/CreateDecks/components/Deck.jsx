@@ -22,9 +22,7 @@ const Deck = ({
   limitations,
   setContador,
   LongPress,
-  lider,
   setLider,
-  liderColor
 }) => {
   const [SaveAlert, setSaveAlert] = useState(false);
   const ToggleSaveAlert = () => {
@@ -47,7 +45,7 @@ const Deck = ({
       <TouchableOpacity
         key={cardObj.id}
         style={styles.cardContainer}
-        onLongPress={() => LongPress(cardObj.id)}
+        onPress={() => LongPress(cardObj.id)}
         delayLongPress={400}
       >
         {cardObj.cards.map((card, index) => (

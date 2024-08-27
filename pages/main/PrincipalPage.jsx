@@ -22,7 +22,7 @@ const PrincipalPage = () => {
         style={styles.background}
       >
         <Header />
-        <Text style={{position: "absolute", bottom: 0, right: 0, backgroundColor: "#f6f6f6", opacity: .5, paddingHorizontal: 25}}>Developed by: Moonke7</Text>
+        <Text style={{position: "absolute", bottom: 0, right: 0, backgroundColor: "#f6f6f6", opacity: .8, paddingHorizontal: 25}}>Developed by: Moonke7</Text>
         <View style={styles.container}>
           <Text style={styles.tittle}> Bienvenido/a {username ? username: "cargando datos.."} </Text>
           <Menu user={username}/>

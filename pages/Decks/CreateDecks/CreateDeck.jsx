@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import RulesAlert from "./components/RulesAlert";
 import { useCallback, useContext, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -27,6 +28,7 @@ import {
 } from "firebase/firestore";
 import { app } from "../../../database/firebase";
 import { Snackbar } from "react-native-paper";
+import ExportImportAlert from "./components/ExportImport";
 
 const CreateDeck = () => {
   const [alert, setAlert] = useState(false);
@@ -35,14 +37,21 @@ const CreateDeck = () => {
   const [cardsAdded, setCardsAdded] = useState([]);
   const [LongPressedCard, setLongPressedCard] = useState(null);
   const [limitations, setLimitations] = useState(false);
-  const { deckName, deckId, userId, setDeckName } = useContext(GlobalContext);
+  const { deckName, deckId, userId, setDeckName, setFolders } =
+    useContext(GlobalContext);
   const [Diseños, setDiseños] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [LiderColor, setLiderColor] = useState("");
   const [Lider, setLider] = useState("");
   const [LimitSnack, setLimitSnack] = useState(false);
   const ToggleLimitSnack = () => setLimitSnack(!LimitSnack);
   const dismissLimit = () => setLimitSnack(false);
+
+  const [ExportAlert, setExportAlert] = useState(false);
+  const ToggleExport = () => setExportAlert(!ExportAlert);
+  const [ExportSnack, setExportSnack] = useState(false);
+  const toggleExportSnack = () => setExportSnack(!ExportSnack);
 
   const db = getFirestore(app);
 
@@ -97,6 +106,7 @@ const CreateDeck = () => {
 
   const LoadCards = async () => {
     try {
+      setLoading(true);
       const db = getFirestore(app);
       const CardsCollection = collection(
         db,
@@ -136,7 +146,7 @@ const CreateDeck = () => {
           newCards.reduce((sum, cardGroup) => sum + cardGroup.cards.length, 0)
         );
       } else {
-        console.error("No se encontraron cartas en la colección.");
+        console.log("No se encontraron cartas en la colección.");
       }
 
       const deckDocRef = doc(db, `users/${userId}/decks/${deckId}`);
@@ -158,6 +168,8 @@ const CreateDeck = () => {
       }
     } catch (error) {
       console.error("Error al cargar las cartas: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -216,6 +228,38 @@ const CreateDeck = () => {
     handleEditAlert();
   };
 
+  const ClearFolders = () => {
+    setFolders([]);
+  };
+  useFocusEffect(
+    useCallback(() => {
+      ClearFolders();
+    }, [])
+  );
+
+  const ExportCards = async () => {
+    console.log(limitations)
+    if(cardsAdded.length < 1){
+      Alert.alert("No has agregado ninguna carta para exportar!")
+      return
+    }
+
+    //poner las limitaciones del mazo primero
+    let text = `Limitaciones = ${limitations},\n`;
+    //en caso de que hayan cartas, se copian todas las ids
+    for (const group of cardsAdded) {
+      for (const card of group.cards) {
+        text = text + card.id + ",\n";
+      }
+    }
+    text = text.trim().slice(0, -1);
+    await Clipboard.setStringAsync(text);
+    ToggleExport();
+    toggleExportSnack();
+    console.log(text)
+  };
+
+
   return (
     <ImageBackground
       source={{
@@ -225,7 +269,7 @@ const CreateDeck = () => {
     >
       <View style={styles.container}>
         <View style={styles.header}>
-          <View style={{gap: 5}}>
+          <View style={{ gap: 5 }}>
             <View style={{ flexDirection: "row" }}>
               <Text style={{ fontWeight: "500" }}>Limitaciones: </Text>
               <Text
@@ -249,7 +293,7 @@ const CreateDeck = () => {
               <Text>Mazos guardados</Text>
               <Ionicons name="chevron-back-sharp" size={18} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={ToggleExport}>
               <Text style={{}}>Importar / exportar</Text>
             </TouchableOpacity>
           </View>
@@ -267,7 +311,7 @@ const CreateDeck = () => {
           liderColor={LiderColor}
         />
 
-        <AllCards addCard={AddCard} />
+        <AllCards addCard={AddCard} loading={loading} />
 
         <RulesAlert
           message={"Como desea crear su mazo?"}
@@ -299,6 +343,28 @@ const CreateDeck = () => {
           }}
         >
           Solo puedes añadir 4 cartas iguales!
+        </Snackbar>
+
+        <ExportImportAlert
+          visible={ExportAlert}
+          onCancel={ToggleExport}
+          ExportCards={ExportCards}
+          togleAlert={ToggleExport}
+          setCardsAdded={setCardsAdded}
+          limitations={limitations}
+        />
+        <Snackbar
+          style={{ width: "90%", alignSelf: "center" }}
+          visible={ExportSnack}
+          onDismiss={toggleExportSnack}
+          action={{
+            label: "close",
+            onPress: () => {
+              toggleExportSnack();
+            },
+          }}
+        >
+          Cartas copiadas al portapapeles!
         </Snackbar>
       </View>
     </ImageBackground>

@@ -138,7 +138,14 @@ const SearchCards = () => {
               <TouchableOpacity onPress={() => SelectFolder(index)}>
                 <Text style={styles.folderName}>{folder.name}</Text>
               </TouchableOpacity>
-              <Text style={styles.cantidad}>{folder.cards.length}</Text>
+              <View style={{flexDirection: "row", gap: 15, alignItems: "center"}}>
+                <Text style={styles.aviso}>
+                  {folder.cards.length === CardsLeft.length
+                    ? "Todas las cartas estan aqui!"
+                    : ""}
+                </Text>
+                <Text style={styles.cantidad}>{folder.cards.length}</Text>
+              </View>
             </View>
           ))}
         </ScrollView>
@@ -216,5 +223,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 5,
   },
+  aviso: {
+    fontWeight: "800",
+    color: "#009f63"
+  }
 });
 export default SearchCards;

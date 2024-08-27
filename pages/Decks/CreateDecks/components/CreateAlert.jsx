@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
 
 const CreateDeckAlert = ({ visible, onConfirm, onCancel, message }) => {
@@ -8,6 +9,12 @@ const CreateDeckAlert = ({ visible, onConfirm, onCancel, message }) => {
     setName(e);
   }
   
+  useFocusEffect(
+    useCallback(() => {
+      setName("")
+    }, [])
+  )
+
   return (
     <Modal
       transparent={true}

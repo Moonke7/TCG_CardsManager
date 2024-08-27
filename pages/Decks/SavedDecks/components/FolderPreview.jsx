@@ -16,8 +16,6 @@ const FolderPreviewAlert = ({
   FolderData,
   UseCard,
 }) => {
-  /* console.log(FolderData.cards);
-   */
   return (
     <Modal
       transparent={true}
@@ -47,7 +45,7 @@ const FolderPreviewAlert = ({
           </View>
           <View style={styles.cardsInFolder__container}>
             <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-              <Text style={{ fontSize: 15 }}>Cartas en: </Text>
+              <Text style={{ fontSize: 15 }}>Cartas buscadas en: </Text>
               <Text style={{ color: "#0616cd", fontWeight: "bold" }}>
                 {FolderData.name}
               </Text> 

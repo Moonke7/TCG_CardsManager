@@ -1,3 +1,18 @@
+import React, { useContext, useState } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator, // Para mostrar un indicador de carga
+} from "react-native";
+import { app } from "../../../../database/firebase";
+import { GlobalContext } from "../../../../GlobalContext";
+import { useNavigation } from "@react-navigation/native";
+import { Snackbar } from "react-native-paper";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   addDoc,
   collection,
@@ -10,36 +25,30 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import React, { useContext, useState } from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { app } from "../../../../database/firebase";
-import { GlobalContext } from "../../../../GlobalContext";
-import { useNavigation } from "@react-navigation/native";
-import { Snackbar } from "react-native-paper";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
   const { userId, deckId, deckName, AddFolderToSearchCards, setSearchedCards } =
     useContext(GlobalContext);
   const [SavingSnack, setSavingSnack] = useState(false);
+  const [SavedSnack, setSavedSnack] = useState(false);
+  const [loading, setLoading] = useState(false); // Estado para controlar el loading
+  const navigation = useNavigation();
+
   const toggleSaving = () => setSavingSnack(!SavingSnack);
   const dismissSaving = () => setSavingSnack(false);
-  const [SavedSnack, setSavedSnack] = useState(false);
   const toggleSaved = () => setSavedSnack(!SavedSnack);
-
-  const navigation = useNavigation();
 
   const goToFolders = () => {
     navigation.navigate("Inventory");
   };
-  goToSearchCards = () => {
+  const goToSearchCards = () => {
     navigation.navigate("SearchCards");
   };
 
   const db = getFirestore(app);
 
   const SaveAddedCards = async () => {
+    setLoading(true);
     try {
       toggleSaving();
       const CardsToSaveCollection = collection(
@@ -51,9 +60,6 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
       const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
 
-      console.log("La carpeta ha sido limpiada.");
-
-      // Ahora agregar las nuevas cartas
       for (const group of AddedCards) {
         for (const card of group.cards) {
           await addDoc(CardsToSaveCollection, {
@@ -70,25 +76,25 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
           });
         }
       }
-      // togleAlert();
+
       dismissSaving();
       toggleSaved();
       console.log("Todas las cartas han sido guardadas exitosamente.");
     } catch (error) {
       console.log("ERROR: " + error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const transferCardsToFolder = async () => {
-    const db = getFirestore(app);
     const folderName = deckName;
-
+    
     if (folderName !== "") {
       try {
         await SaveAddedCards();
+        setLoading(true);
         const userFoldersCollection = collection(db, `users/${userId}/folders`);
-
-        // Comprobar si la carpeta ya existe
         const nameQuery = query(
           userFoldersCollection,
           where("name", "==", folderName)
@@ -100,16 +106,11 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
         if (!querySnapshotName.empty) {
           folderId = querySnapshotName.docs[0].id;
         } else {
-          // Si la carpeta no existe, crearla
           const newFolderRef = doc(userFoldersCollection);
-          await setDoc(newFolderRef, {
-            name: folderName,
-          });
+          await setDoc(newFolderRef, { name: folderName });
           folderId = newFolderRef.id;
-          console.log("Folder added successfully!");
         }
 
-        // Mover cartas de las guardadas en el mazo a la carpeta
         const recentAddedCollection = collection(
           db,
           `users/${userId}/decks/${deckId}/cards`
@@ -123,9 +124,8 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
 
         for (const cardDoc of querySnapshot.docs) {
           const cardData = cardDoc.data();
-          const cardQuantity = cardData.cantidad || 1; // Valor por defecto de cantidad es 1
+          const cardQuantity = cardData.cantidad || 1;
 
-          // Verificar si la carta ya existe en la carpeta
           const cardQuery = query(
             cardsCollection,
             where("id", "==", cardData.id)
@@ -133,33 +133,25 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
           const cardQuerySnapshot = await getDocs(cardQuery);
 
           if (!cardQuerySnapshot.empty) {
-            // Actualizar cantidad si la carta ya existe
             const existingCardDoc = cardQuerySnapshot.docs[0];
             const existingCardData = existingCardDoc.data();
             const newCantidad = existingCardData.cantidad + cardQuantity;
             await updateDoc(existingCardDoc.ref, { cantidad: newCantidad });
-            console.log(`Card ${cardData.name} quantity updated successfully!`);
           } else {
-            // Añadir la carta si no existe
             const newCardRef = doc(cardsCollection);
             await setDoc(newCardRef, {
               ...cardData,
-              cantidad: cardQuantity, // Añadir cantidad por defecto de 1
+              cantidad: cardQuantity,
             });
-            console.log(`Card ${cardData.name} added successfully!`);
           }
 
-          // Eliminar la carta de la colección original
           await deleteDoc(cardDoc.ref);
         }
-        const deleteDeckReference = doc(db, `users/${userId}/decks/${deckId}`);
-        await deleteDoc(deleteDeckReference);
         goToFolders();
-        console.log(
-          "All cards transferred and recentAdded emptied successfully!"
-        );
       } catch (error) {
         console.error("Error transferring cards: ", error);
+      } finally {
+        setLoading(false);
       }
     } else {
       console.error("Folder name is empty!");
@@ -170,17 +162,16 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
     if (AddedCards) {
       try {
         await SaveAddedCards();
+        setLoading(true);
         const userFoldersCollection = collection(db, `users/${userId}/folders`);
         const FoldersQuerySnapshot = await getDocs(userFoldersCollection);
 
-        // Utilizar Promise.all para manejar las operaciones asíncronas dentro del forEach
         await Promise.all(
           FoldersQuerySnapshot.docs.map(async (folder) => {
             const folderData = folder.data();
             const folderName = folderData.name;
             const FolderId = folder.id;
 
-            // Referencia a la colección de cartas de cada carpeta
             const CardsFromFolderCollection = collection(
               db,
               `users/${userId}/folders/${FolderId}/cards`
@@ -204,10 +195,6 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
               }
             });
 
-            console.log(
-              `Carpeta "${FolderId}" contiene ${foundCardCount} cartas buscadas.`
-            );
-
             if (foundCardCount > 0) {
               const FolderObject = {
                 name: folderName,
@@ -226,6 +213,8 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
         goToSearchCards();
       } catch (error) {
         console.error("Error buscando en el inventario:", error);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -243,27 +232,46 @@ const SaveOptionsAlert = ({ visible, onCancel, AddedCards, togleAlert }) => {
             <TouchableOpacity
               onPress={SaveAddedCards}
               style={styles.saveButton}
+              disabled={loading} // Deshabilitar mientras loading es true
             >
               <Text>Guardar y salir</Text>
-              <AntDesign name="save" size={24} color="black" />
+              {loading ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <AntDesign name="save" size={24} color="black" />
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={transferCardsToFolder}
               style={styles.saveButton}
+              disabled={loading} // Deshabilitar mientras loading es true
             >
               <Text>Añadir mazo como nuevo almacen</Text>
-              <MaterialIcons name="data-saver-on" size={24} color="black" />
+              {loading ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <MaterialIcons name="data-saver-on" size={24} color="black" />
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={LookInInventory}
               style={styles.saveButton}
+              disabled={loading} // Deshabilitar mientras loading es true
             >
               <Text>Buscar cartas en tu inventario</Text>
-              <MaterialIcons name="manage-search" size={24} color="black" />
+              {loading ? (
+                <ActivityIndicator size="small" color="#000" />
+              ) : (
+                <MaterialIcons name="manage-search" size={24} color="black" />
+              )}
             </TouchableOpacity>
           </View>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onCancel}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={onCancel}
+              disabled={loading} // Deshabilitar mientras loading es true
+            >
               <Text style={styles.buttonText}>cerrar</Text>
             </TouchableOpacity>
           </View>

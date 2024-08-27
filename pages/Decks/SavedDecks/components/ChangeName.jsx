@@ -1,7 +1,20 @@
-import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+} from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 
-const DeleteAlert = ({ visible, onConfirm, onCancel, message, deckName }) => {
+const ChangeName = ({ visible, onConfirm, onCancel, message }) => {
+  const [name, setName] = useState("");
+  const updateName = (e) => {
+    setName(e);
+  };
+
   return (
     <Modal
       transparent={true}
@@ -11,23 +24,20 @@ const DeleteAlert = ({ visible, onConfirm, onCancel, message, deckName }) => {
     >
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.message}>{message}</Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              gap: 2,
-              marginBottom: 20,
-            }}
-          >
-            <Text style={styles.note}>Estas a punto de borrar: </Text>
-            <Text style={{ fontSize: 18, fontWeight: "bold" }}>{deckName}</Text>
-          </View>
+          <TextInput
+            style={styles.input}
+            onChangeText={updateName}
+            value={name}
+            placeholder="Ingresar nombre"
+          />
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={onCancel}>
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={onConfirm}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => onConfirm(name)}
+            >
               <Text style={styles.buttonText}>Confirmar</Text>
             </TouchableOpacity>
           </View>
@@ -60,7 +70,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   button: {
-    padding: 10,
+    paddingVertical: 10,
     backgroundColor: "#3d3d3d",
     borderRadius: 5,
     width: "45%",
@@ -68,13 +78,29 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
   },
-  note: {
-    fontWeight: "600",
-    color: "red",
-    fontSize: 16,
+  info__hide: {
+    position: "absolute",
+    opacity: 0,
+    left: -1000,
+  },
+  info__show: {
+    paddingTop: 25,
+    fontWeight: "700",
+  },
+  input: {
+    borderColor: "#292929",
+    borderWidth: 2,
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 10,
+    width: "100%",
+    marginVertical: 28,
+    fontSize: 14,
+    backgroundColor: "#e7e7e7",
+    color: "#292929",
   },
 });
 
-export default DeleteAlert;
+export default ChangeName;

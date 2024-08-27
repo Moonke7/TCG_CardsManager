@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 10,
     paddingBottom: 25,
-    opacity: 0.85,
+    opacity: 0.9,
     alignItems: "center",
     justifyContent: "start",
   },

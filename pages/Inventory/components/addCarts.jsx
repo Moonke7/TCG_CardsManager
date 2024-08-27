@@ -394,6 +394,7 @@ const AddCards = () => {
               onChangeText={updateSearch}
               value={search}
               placeholder="Buscar por nombre / id "
+              onSubmitEditing={filter} 
             />
             <Feather
               name="search"
